@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+read -p "Press ENTER to continue"
+
+echo "Removing legacy..."
+
+./remove-legacy
+
+rm -rf ./build
+rm -rf ./potionhook
+rm -rf ./potionhook-ipc-server
+rm -rf ./potionhook-ipc-web-panel
+rm -rf ./just-disable-vac
+rm -rf ./user_instances
+rm -rf ./potionbot-database
+sudo rm -rf /opt/cathook/ipc
+sudo rm /opt/cathook/bin/libcathook-textmode.so

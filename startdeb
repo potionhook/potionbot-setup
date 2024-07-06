@@ -1,0 +1,81 @@
+#!/bin/bash
+
+#its for ubuntu/debian
+echo "export PATH=$PATH:/sbin" >> .bashrc
+source .bashrc
+
+if [ $EUID == 0 ]; then
+    echo "This script must not be run as root"
+    exit
+fi
+
+if ! [ -d "./user_instances" ]; then
+    echo "You need to run install-catbots first."
+    exit
+fi
+
+sudo mkdir -p /opt/steamapps
+mountpoint -q /opt/steamapps || sudo mount --bind ~/.steam/steam/steamapps/ /opt/steamapps
+
+ipcserver=$( ps faux | grep '/opt/cathook/ipc/bin/server' | grep -vw grep | awk '{ print $2 }' );
+[ -z "$ipcserver" ] && /opt/cathook/ipc/bin/server -s >/dev/null &
+[ -z "$ipcserver" ] && echo $! >/tmp/cat-ipc-server.pid
+
+if [ -e "/tmp/ncat-cathook-webpanel.pid" ] && ps -p `cat "/tmp/ncat-cathook-webpanel.pid"` >/dev/null; then
+    echo IPC panel already running.
+else
+    pushd rosnehook-ipc-web-panel
+    sudo PATH="$PATH" STEAM_LD_PRELOAD="$(cd ../ && pwd)/just-disable-vac/build/bin64/libvpcfs.so.0:$(cd ../ && pwd)/just-disable-vac/build/bin32/libvpcfs.so.0" bash ./run.sh &
+    popd
+fi
+
+echo "⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⣶⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⡿⠿⣿⣻⣧⡀⣠⣦⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢠⠟⠹⠷⢸⠛⢹⣿⢣⣺⢿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⢀⠔⠈⠄⠀⢘⣐⢁⢀⢟⢼⣿⡋⠙⠻⡇⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⣠⢣⡀⢠⠀⣑⢌⠋⠉⠟⣭⡿⢅⠔⡉⢃⠻⡆⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⢸⢃⠂⢱⠚⠤⢠⠱⠅⠨⢴⡇⠰⠂⠠⠈⠄⢂⢣⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠌⢸⠆⠈⠀⠀⠸⠐⣄⢀⣾⣶⣎⠢⢄⠊⠈⠊⠀⡆⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⡎⠀⠀⢻⡤⠀⠸⣷⣿⣾⢑⣸⠁⠀⠀⠀⠈⠤⢀⡰⠃⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠐⠄⠤⠊⠀⠀⠀⠸⠀⠈⠈⠀⠀⠀⠀⠀⠀⢀⠇⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣆⡀⠀⠀⠀⠠⠄⣀⡴⠾⠤⠀⡀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⡀⠄⠊⢬⣋⠛⢏⡉⠉⢉⣿⣿⠞⣒⣶⣤⣤⣀⣠⡀⠀⠀⠀
+⠀⠀⠀⢀⠠⣂⣵⣶⣿⣿⣿⣿⣿⣦⣄⠀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣮⣂⠀⠀
+⠀⢀⣴⣷⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣿⣿⠿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀
+⠀⢸⣿⣧⣿⣿⣿⣿⣿⡿⠟⠋⠉⠉⠁⠀⠀⠀⠀⠀⠀⢨⣿⣿⣿⣿⣿⡇⠀⠀
+⠀⠈⢿⣿⣿⣿⣿⣿⡁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣷⣿⣿⣿⣿⣿⣇⠀⠀
+⠀⠀⣾⣿⣿⣿⣿⣿⡷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠻⠿⠿⠿⡿⠿⠀⠀
+⠀⠀⠙⠻⠛⠋⠉⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠂⠀⠀⠀
+⠀⠀⠀⠀⠆⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡆⠀⠘⠀⠀⠀⠀
+⠀⠀⠀⠀⢠⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⡇⠀⠀⠀⠀
+⠀⠀⠀⢀⣸⡄⠘⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠃⢀⣇⠀⠀⠀⠀
+⣀⣠⣶⣿⡿⢿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣶⣾⡿⣷⡄⡀⠀
+⠙⠛⠛⠛⠛⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠛⠻⣾⣿⣿⠶⠿"
+sleep 2;
+
+clear;
+
+if [ -x "$(command -v pulseaudio)" ]; then
+    echo "Setting up micspam..."
+    pulse=$(pgrep -u "$USER" pulseaudio);
+    ([ ! -z "$pulse" ]) && pulseaudio --start &>/dev/null &
+    pactl load-module module-native-protocol-unix auth-anonymous=1 socket=/tmp/pulse.sock > /tmp/pulsemodule.id
+fi
+
+if [ -x "$(command -v xpra)" ]; then
+    read -p "Do you want to start the XPRA display? (y/n): " choice
+    case "$choice" in 
+        y|Y ) xpra start :100;;
+        n|N ) echo "You need to start xpra, my fork using it.";;
+        * ) echo "ARE YOU FUCKING RETARDED, CANT YOU CLICK "Y" OR "N"??? anyway, Invalid choice. XPRA display not started.";;
+    esac
+fi 
+
+sleep 5;
+
+echo "IPC Web Panel password: `cat /tmp/cat-webpanel-password`"
+sudo chmod 700 /opt/steamapps/common/Team\ Fortress\ 2/tf/glshaders.cfg
+
+echo "Open a web browser and go to localhost:8081 to see your melodyhook IPC web panel."
+echo "If u wanna connect to panel with other internet, just forward port you dumbass."
+echo "melodyhook 2024"
